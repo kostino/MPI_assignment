@@ -173,6 +173,70 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
     dest=me+1;
   }
   MPI_Status status;
+  for(int s=0;s<size;s++){
+        
+    MPI_ISend(corpus,n*d,MPI_DOUBLE,dest,3,MPI_COMM_WORLD);
+    MPI_IRecv(tempcorpus,n*d,MPI_DOUBLE,src,3,MPI_COMM_WORLD,status);
+      
+
+    if(i==0){
+    result=kNN(corpus,X,n,n,d,k);
+    for(int i=0;i<n;i++){
+        for(int j=0;j<k;j++){
+            if((src-s)==0){
+                result.nidx[i*n+j]=result.nidx[i*n+j]+(size-1)*n;
+            }
+            else{
+                result.nidx[i*n+j]=result.nidx[i*n+j]+(src-s-1)*n;
+            }
+        }
+    }
+    }
+    else{
+        temp=kNN(corpus,X,n,n,d,k);
+        for(int i=0;i<n;i++){
+            for(int j=0;j<k;j++){
+                if((src-s)==0){
+                    temp.nidx[i*n+j]=temp.nidx[i*n+j]+(size-1)*n;
+                }
+                else{
+                    temp.nidx[i*n+j]=temp.nidx[i*n+j]+(src-s-1)*n;
+                }
+            }
+        }
+    }
+    //Now combine temp and result and store in result
+    if(i>0){
+    int i;
+    int j;
+    for(int ii=0;ii<n;ii++){
+    i=0;
+    j=0;
+        while((i+j)<k){
+            if(result.ndist[ii*n+i]<=temp.ndist[ii*n+j]){
+            disthelper[i+j]=result.ndist[ii*n+i];
+            idhelper[i+j]=result.nidx[ii*n+i];
+            i++;
+        }
+        else{
+            disthelper[i+j]=temp.ndist[ii*n+j];
+                        idhelper[i+j]=temp.nidx[ii*n+j];
+                        j++;
+
+        }
+        }
+    for(int jj=0;jj<k;jj++){
+        result.ndist[ii*n+jj]=disthelper[jj];
+        result.nidx[ii*n+jj]=idhelper[jj];
+    }
+    }
+    }
+    //swap the two buffers so that you do calc on the one you just received each time
+    tempHELP=corpus;
+    corpus=tempcorpus;
+    tempcorpus=tempHELP;
+  }
+    ///
   result=kNN(X,X,n,n,d,k);
     for(int i=0;i<n;i++){
         for(int j=0;j<k;j++){
@@ -184,57 +248,6 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
             }
         }
     }
-  for(int s=0;s<size;s++){
-      if(me%2==0){
-        MPI_Send(corpus,n*d,MPI_DOUBLE,dest,3,MPI_COMM_WORLD);
-        MPI_Recv(corpus,n*d,MPI_DOUBLE,src,3,MPI_COMM_WORLD,status);
-      }
-      else{
-        MPI_Recv(tempcorpus,n*d,MPI_DOUBLE,src,3,MPI_COMM_WORLD,status);
-        MPI_Send(corpus,n*d,MPI_DOUBLE,dest,3,MPI_COMM_WORLD);
-	//swap the two buffers so that you do calc on the one you just received each time
-	tempHELP=corpus;
-	corpus=tempcorpus;
-	tempcorpus=tempHELP;
-      }
-    temp=kNN(corpus,X,n,n,d,k);
-      for(int i=0;i<n;i++){
-          for(int j=0;j<k;j++){
-              if((src-s)==0){
-                  temp.nidx[i*n+j]=temp.nidx[i*n+j]+(size-1)*n;
-              }
-              else{
-                  temp.nidx[i*n+j]=temp.nidx[i*n+j]+(src-s-1)*n;
-              }
-          }
-      }
-    
-    //Now combine temp and result and store in result
-    int i;
-    int j;
-    for(int ii=0;ii<n;ii++){
-	i=0;
-	j=0;
-    	while((i+j)<k){
-    		if(result.ndist[ii*n+i]<=temp.ndist[ii*n+j]){
-			disthelper[i+j]=result.ndist[ii*n+i];
-			idhelper[i+j]=result.nidx[ii*n+i];
-			i++;
-		}
-		else{
-			disthelper[i+j]=temp.ndist[ii*n+j];
-                        idhelper[i+j]=temp.nidx[ii*n+j];
-                        j++;
-
-		}
-    	}
-	for(int jj=0;jj<k;jj++){
-		result.ndist[ii*n+jj]=disthelper[jj];
-		result.nidx[ii*n+jj]=idhelper[jj];
-	}
-    }
-
-
-  }
+  
     return result;
 }
