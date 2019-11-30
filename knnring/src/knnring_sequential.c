@@ -128,12 +128,5 @@ knnresult kNN(double* X, double* Y, int n, int m, int d, int k)
 		}
 		QSort(result.ndist, result.nidx, i * k, (i + 1) * k - 1);
 	}
-
-	for (int i = 0; i < m; i++) {
-		for (int j = 0; j < k; j++) {
-			printf("%f ", result.ndist[i * k + j]);
-		}
-		printf("\n");
-	}
 	return result;
 }
