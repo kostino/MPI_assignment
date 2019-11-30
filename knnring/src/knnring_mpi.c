@@ -200,8 +200,8 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
     temp=kNN(corpus,X,n,n,d,k);
       for(int i=0;i<n;i++){
           for(int j=0;j<k;j++){
-              if((src-s)==0){
-                  temp.nidx[i*n+j]=temp.nidx[i*n+j]+(size-1)*n;
+              if((src-s-1)<0){
+                  temp.nidx[i*n+j]=temp.nidx[i*n+j]+(size-(src-s-1))*n;
               }
               else{
                   temp.nidx[i*n+j]=temp.nidx[i*n+j]+(src-s-1)*n;
