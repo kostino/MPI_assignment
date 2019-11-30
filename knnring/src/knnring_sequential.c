@@ -1,3 +1,8 @@
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <cblas.h>
+#include "knnring.h"
 
 void swap(double* arr, int a, int b) {
 	double temp = arr[a];
