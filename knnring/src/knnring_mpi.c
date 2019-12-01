@@ -129,8 +129,11 @@ knnresult kNN(double* X, double* Y, int n, int m, int d, int k)
         }
         QSort(result.ndist, result.nidx, i * k, (i + 1) * k - 1);
     }
+    free(distances);
+    free(ids);
     return result;
 }
+
 
 
 knnresult distrAllkNN(double * X,int n,int d,int k){
@@ -157,6 +160,9 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
   int me, size,src,dest;
   //we need a temp corpus for the processes that receive before sending
   double * corpus = (double* )malloc(n*d*sizeof(double));
+    for(int i=0;i<n*d;i++){
+        corpus[i]=X[i];
+    }
   double * tempcorpus =(double *)malloc(n*d*sizeof(double));
   //helps to swap tempcorpus and corpus
   double * tempHELP;
@@ -184,22 +190,22 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
     for(int i=0;i<n;i++){
         for(int j=0;j<k;j++){
             if(me==0){
-                result.nidx[i*k+j]=result.nidx[i*k+j]+(size-1)*n;
+                result.nidx[i*k+j]+=(size-1)*n;
             }
             else{
-                result.nidx[i*k+j]=result.nidx[i*k+j]+(me-1)*n;
+                result.nidx[i*k+j]+=(me-1)*n;
             }
         }
     }
   //then i communicate
-  for(int s=0;s<size;s++){
+  for(int s=0;s<size-1;s++){
       //half the procs send first the other half receive first
       if(me%2==0){
         MPI_Send(corpus,n*d,MPI_DOUBLE,dest,3,MPI_COMM_WORLD);
-        MPI_Recv(corpus,n*d,MPI_DOUBLE,src,3,MPI_COMM_WORLD,status);
+        MPI_Recv(corpus,n*d,MPI_DOUBLE,src,3,MPI_COMM_WORLD,&status);
       }
       else{
-        MPI_Recv(tempcorpus,n*d,MPI_DOUBLE,src,3,MPI_COMM_WORLD,status);
+        MPI_Recv(tempcorpus,n*d,MPI_DOUBLE,src,3,MPI_COMM_WORLD,&status);
         MPI_Send(corpus,n*d,MPI_DOUBLE,dest,3,MPI_COMM_WORLD);
         //swap the two buffers so that you do calc on the one you just received each time
         tempHELP=corpus;
@@ -211,10 +217,10 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
         for(int i=0;i<n;i++){
           for(int j=0;j<k;j++){
               if((src-s-1)<0){
-                  temp.nidx[i*k+j]=temp.nidx[i*k+j]+(size+(src-s-1))*n;
+                temp.nidx[i*k+j]+=(size+(src-s-1))*n;
               }
               else{
-                  temp.nidx[i*k+j]=temp.nidx[i*k+j]+(src-s-1)*n;
+                  temp.nidx[i*k+j]+=(src-s-1)*n;
               }
           }
         }
@@ -246,5 +252,9 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
 
 
   }
+    free(corpus);
+    free(tempcorpus);
+    free(idhelper);
+    free(disthelper);
     return result;
 }

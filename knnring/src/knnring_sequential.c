@@ -128,5 +128,7 @@ knnresult kNN(double* X, double* Y, int n, int m, int d, int k)
 		}
 		QSort(result.ndist, result.nidx, i * k, (i + 1) * k - 1);
 	}
+    free(distances);
+    free(ids);
 	return result;
 }
