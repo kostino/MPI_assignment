@@ -234,7 +234,7 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
         }
         }
     }
-    MPI_Wait(&req,&status);
+    MPI_Barrier(MPI_COMM_WORLD);
     MPI_Wait(&req,&status);
     //swap the two buffers so that you do calc on the one you just received each time
     tempHELP=corpus;
