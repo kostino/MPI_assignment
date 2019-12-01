@@ -187,8 +187,8 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
   //then i communicate
   for(int s=0;s<size-1;s++){
         
-    MPI_ISend(corpus,n*d,MPI_DOUBLE,dest,3,MPI_COMM_WORLD,&req);
-    MPI_IRecv(tempcorpus,n*d,MPI_DOUBLE,src,3,MPI_COMM_WORLD,&req);
+    MPI_Isend(corpus,n*d,MPI_DOUBLE,dest,3,MPI_COMM_WORLD,&req);
+    MPI_Irecv(tempcorpus,n*d,MPI_DOUBLE,src,3,MPI_COMM_WORLD,&req);
       
     //calculations for kNN and ids accordingly
       temp=kNN(corpus,X,n,n,d,k);
