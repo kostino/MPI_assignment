@@ -129,6 +129,8 @@ knnresult kNN(double* X, double* Y, int n, int m, int d, int k)
         }
         QSort(result.ndist, result.nidx, i * k, (i + 1) * k - 1);
     }
+    free(distances);
+    free(ids);
     return result;
 }
 
@@ -188,58 +190,49 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
     MPI_ISend(corpus,n*d,MPI_DOUBLE,dest,3,MPI_COMM_WORLD,&req);
     MPI_IRecv(tempcorpus,n*d,MPI_DOUBLE,src,3,MPI_COMM_WORLD,&req);
       
-
-    if(i==0){
-    result=kNN(corpus,X,n,n,d,k);
-    for(int i=0;i<n;i++){
-        for(int j=0;j<k;j++){
-            if((src-s)==0){
-                result.nidx[i*n+j]=result.nidx[i*n+j]+(size-1)*n;
-            }
-            else{
-                result.nidx[i*n+j]=result.nidx[i*n+j]+(src-s-1)*n;
-            }
+    //calculations for kNN and ids accordingly
+      temp=kNN(corpus,X,n,n,d,k);
+        for(int i=0;i<n;i++){
+          for(int j=0;j<k;j++){
+              if((src-s)<0){
+                temp.nidx[i*k+j]+=(size+(src-s))*n;
+              }
+              else{
+                  temp.nidx[i*k+j]+=(src-s)*n;
+              }
+          }
         }
-    }
+    //Now combine temp and result and store in result
+    if(s==0){
+         for(int jj=0;jj<k;jj++){
+              result.ndist[jj]=temp.ndist[jj];
+              result.nidx[jj]=temp.nidx[jj];
+          }
     }
     else{
-        temp=kNN(corpus,X,n,n,d,k);
-        for(int i=0;i<n;i++){
-            for(int j=0;j<k;j++){
-                if((src-s)==0){
-                    temp.nidx[i*k+j]=temp.nidx[i*k+j]+(size-1)*n;
+        int i;
+        int j;
+        for(int ii=0;ii<n;ii++){
+        i=0;
+        j=0;
+            while((i+j)<k){
+                if(result.ndist[ii*k+i]<=temp.ndist[ii*k+j]){
+                    disthelper[i+j]=result.ndist[ii*k+i];
+                    idhelper[i+j]=result.nidx[ii*k+i];
+                    i++;
                 }
                 else{
-                    temp.nidx[i*k+j]=temp.nidx[i*k+j]+(src-s-1)*n;
-                }
-            }
-        }
-    }
-    //Now combine temp and result and store in result
-    if(i>0){
-    int i;
-    int j;
-    for(int ii=0;ii<n;ii++){
-    i=0;
-    j=0;
-        while((i+j)<k){
-            if(result.ndist[ii*k+i]<=temp.ndist[ii*k+j]){
-            disthelper[i+j]=result.ndist[ii*k+i];
-            idhelper[i+j]=result.nidx[ii*k+i];
-            i++;
-        }
-        else{
-            disthelper[i+j]=temp.ndist[ii*k+j];
+                    disthelper[i+j]=temp.ndist[ii*k+j];
                         idhelper[i+j]=temp.nidx[ii*k+j];
                         j++;
 
+                }
+            }
+        for(int jj=0;jj<k;jj++){
+            result.ndist[ii*k+jj]=disthelper[jj];
+            result.nidx[ii*k+jj]=idhelper[jj];
         }
         }
-    for(int jj=0;jj<k;jj++){
-        result.ndist[ii*k+jj]=disthelper[jj];
-        result.nidx[ii*k+jj]=idhelper[jj];
-    }
-    }
     }
     MPI_Wait(&req,&status);
     MPI_Wait(&req,&status);
@@ -248,18 +241,40 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
     corpus=tempcorpus;
     tempcorpus=tempHELP;
   }
-    ///
-  result=kNN(X,X,n,n,d,k);
+  //last left are those of the next proc so id = (me - 1)+1=me
+  temp=kNN(corpus,X,n,n,d,k);
     for(int i=0;i<n;i++){
         for(int j=0;j<k;j++){
-            if(me==0){
-                result.nidx[i*k+j]=result.nidx[i*k+j]+(size-1)*n;
-            }
-            else{
-                result.nidx[i*k+j]=result.nidx[i*k+j]+(me-1)*n;
-            }
+            temp.nidx[i*k+j]+=me*n;
         }
     }
-  
+  int i;
+  int j;
+  for(int ii=0;ii<n;ii++){
+  i=0;
+  j=0;
+      while((i+j)<k){
+          if(result.ndist[ii*k+i]<=temp.ndist[ii*k+j]){
+              disthelper[i+j]=result.ndist[ii*k+i];
+              idhelper[i+j]=result.nidx[ii*k+i];
+              i++;
+          }
+          else{
+              disthelper[i+j]=temp.ndist[ii*k+j];
+                  idhelper[i+j]=temp.nidx[ii*k+j];
+                  j++;
+
+          }
+      }
+  for(int jj=0;jj<k;jj++){
+      result.ndist[ii*k+jj]=disthelper[jj];
+      result.nidx[ii*k+jj]=idhelper[jj];
+  }
+  }
+    
+    free(corpus);
+    free(tempcorpus);
+    free(idhelper);
+    free(disthelper);
     return result;
 }
