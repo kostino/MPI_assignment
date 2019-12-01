@@ -169,7 +169,7 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Status status;
-  MPI_request req;
+  MPI_Request req;
   //i receive from the proc before me in the ring(if im 0 the guy before is size-1)
   if(me==0){
     src=size-1;
