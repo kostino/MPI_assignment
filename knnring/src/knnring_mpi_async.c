@@ -138,6 +138,10 @@ knnresult kNN(double* X, double* Y, int n, int m, int d, int k)
 knnresult distrAllkNN(double * X,int n,int d,int k){
   //where new and old results are kept
   knnresult temp,result;
+    double gmax=-1;
+    double gmin=DBL_MAX;
+    double minD=DBL_MAX;
+    double maxD=-1;
   //helpers for merging temp & result
   int * idhelper=(int *)malloc(k*sizeof(int));
   double * disthelper=(double *)malloc(k*sizeof(double));
@@ -271,7 +275,19 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
       result.nidx[ii*k+jj]=idhelper[jj];
   }
   }
-    
+    for(int i=0;i<n*k;i++){
+        if(result.ndist[i]>maxD){
+            maxD=result.ndist[i];
+        }
+        if(result.ndist[i]<minD&&result.ndist[i]>1e-5){
+            minD=result.ndist[i];
+        }
+    }
+    MPI_Reduce(&maxD,&gmax,1,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
+    MPI_Reduce(&minD,&gmin,1,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD);
+    if(me==0){
+        printf("global max: %f \nglobal min: %f\n",gmax,gmin);
+    }
     free(corpus);
     free(tempcorpus);
     free(idhelper);
