@@ -8,8 +8,8 @@
 | n=10000 d=100 |  3.303697  | 36.70688 |
 
 # Cluster result
-for seq : 1 node x 8 tasks
-for mpi : 4 node x 8 tasks
+* for seq : 1 node x 8 tasks
+* for mpi : 4 node x 8 tasks
 
 |               | Sequential | MPI Synchronous | MPI Asynchronous |
 |:-------------:|:----------:|:---------------:|:----------------:|
