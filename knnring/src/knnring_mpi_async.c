@@ -208,7 +208,7 @@ knnresult distrAllkNN(double * X,int n,int d,int k){
         }
     //Now combine temp and result and store in result
     if(s==0){
-         for(int jj=0;jj<k;jj++){
+         for(int jj=0;jj<k*n;jj++){
               result.ndist[jj]=temp.ndist[jj];
               result.nidx[jj]=temp.nidx[jj];
           }
